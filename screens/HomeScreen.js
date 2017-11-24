@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Button,
   Image,
   Platform,
   ScrollView,
@@ -51,6 +52,10 @@ export default class HomeScreen extends React.Component {
               <Text style={styles.helpLinkText}>Help, it didn’t automatically reload!</Text>
             </TouchableOpacity>
           </View>
+
+          <View style={styles.helpContainer}>
+            <Button  title="Login" onPress={this._handleLoginPress} color="#841584"/>
+          </View>
         </ScrollView>
 
         <View style={styles.tabBarInfoContainer}>
@@ -96,6 +101,10 @@ export default class HomeScreen extends React.Component {
       'https://docs.expo.io/versions/latest/guides/up-and-running.html#can-t-see-your-changes'
     );
   };
+
+  _handleLoginPress = () => {
+    this.props.navigation.navigate('Login');
+  }
 }
 
 const styles = StyleSheet.create({

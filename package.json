@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@expo/samples": "2.1.1",
+    "base-64": "^0.1.0",
     "expo": "^23.0.0",
     "react": "16.0.0",
     "react-native": "https://github.com/expo/react-native/archive/sdk-23.0.0.tar.gz",
