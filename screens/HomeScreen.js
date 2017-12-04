@@ -239,7 +239,7 @@ export default class HomeScreen extends React.Component {
 
           <View style={styles.helpContainer}>
             <Button  title="Login" onPress={this._handleLoginPress} color="#841584"/>
-            <Button  title="Login Oauth" onPress={this.OAuth} color="#841584"/>
+            {/* <Button  title="Login Oauth" onPress={this.OAuth} color="#841584"/> */}
           </View>
         </ScrollView>
 

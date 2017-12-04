@@ -50,12 +50,20 @@ export default class LoginScreen extends React.Component {
 
       this.state = {
         url:moauthurl,
-        pstate:state
+        pstate:state,
+        refresh_token: '',
+        auth_state: '',
+        profile: {
+          imageUrl: '',
+          nickname: '',
+        },
       }
 
       this._handleOAuth = this._handleOAuth.bind(this);
       this._onNavigationStateChange = this._onNavigationStateChange.bind(this);
       this._onMessage = this._onMessage.bind(this);
+      this._getToken = this._getToken.bind(this);
+      this._getProfileData = this._getProfileData.bind(this);
     }
 
 
@@ -87,6 +95,100 @@ export default class LoginScreen extends React.Component {
       }
     }
 
+
+    _getToken(codeOrToken, tokenType){
+      let bodyJson;
+      switch(tokenType){
+        case 'access_token':
+          console.log(`code: ${codeOrToken}`);
+          bodyJson = {
+            client_id: config.client_id,
+            client_secret: config.client_secret,
+            redirect_uri: 'oob',
+            code: codeOrToken,
+            grant_type: 'authorization_code'
+          };
+          break;
+        case 'refresh_token':
+          console.log(`refresh_token: ${codeOrToken}`);
+          bodyJson = {
+            client_id: config.client_id,
+            client_secret: config.client_secret,
+            redirect_uri: 'oob',
+            refresh_token: codeOrToken,
+            grant_type: 'refresh_token'
+          };
+          break;
+        default:
+          console.error('Unidentified token type');
+      }
+    
+      const tokenurl = 'https://api.login.yahoo.com/oauth2/get_token';
+      const authcode = base64.encode(`${config.client_id}:${config.client_secret}`);
+      
+      fetch(tokenurl, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Basic ${authcode}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: build_query(bodyJson,5)
+      }).then(res => {
+        return res.json();
+      }).then(token => {
+        console.log(`token res: ${JSON.stringify(token)}`);
+    
+        if (token.error) {
+          AsyncStorage.removeItem(REFRESH_TOKEN, () => {
+            this.setState({
+              refresh_token: '',
+              auth_state: '',
+              profile: {
+                imageUrl: '',
+                nickname: '',
+              },
+            });
+          });
+        }
+        else if (token.refresh_token) {
+          // store refresh_token
+          AsyncStorage.setItem(REFRESH_TOKEN, token.refresh_token);
+    
+          this.setState({
+            refresh_token: token.refresh_token,
+          });
+    
+          // fetch profile
+          this._getProfileData(token);
+        }
+    
+      }).catch(err => console.error('Error fetching token', err));
+    }
+
+    _getProfileData(tokenData){
+      const dataurl = `https://social.yahooapis.com/v1/user/${tokenData.xoauth_yahoo_guid}/profile?format=json`;
+      fetch(dataurl, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`
+        }
+      }).then(res => {
+        return res.json();
+      }).then(profileData => {
+        console.log(`User profile: ${JSON.stringify(profileData)}`);
+  
+        this.setState({
+          profile: {
+            imageUrl: profileData.profile.image.imageUrl,
+            nickname: profileData.profile.nickname,
+          }
+        },()=>{
+          this.props.navigation.navigate('Home');
+        });
+      }).catch(err => console.error('Error fetching profile data', err));
+    }
+
     componentDidMount() {
      
       
@@ -112,7 +214,7 @@ export default class LoginScreen extends React.Component {
        if(e.nativeEvent.data)
        {
         console.log(e.nativeEvent.data);
-        getToken(e.nativeEvent.data, 'access_token');
+        this._getToken(e.nativeEvent.data, 'access_token');
        }
     }
       
@@ -140,7 +242,7 @@ export default class LoginScreen extends React.Component {
 
 
 // function getToken(codeOrToken, tokenType, cb){
-function getToken(codeOrToken, tokenType){
+function ogetToken(codeOrToken, tokenType){
   let bodyJson;
   switch(tokenType){
     case 'access_token':
@@ -182,10 +284,35 @@ function getToken(codeOrToken, tokenType){
     return res.json();
   }).then(token => {
     console.log(`token res: ${JSON.stringify(token)}`);
+
+    if (token.error) {
+      AsyncStorage.removeItem(REFRESH_TOKEN, () => {
+        this.setState({
+          refresh_token: '',
+          auth_state: '',
+          profile: {
+            imageUrl: '',
+            nickname: '',
+          },
+        });
+      });
+    }
+    else if (token.refresh_token) {
+      // store refresh_token
+      // AsyncStorage.setItem(REFRESH_TOKEN, token.refresh_token);
+
+      // this.setState({
+      //   refresh_token: token.refresh_token,
+      // });
+
+      // fetch profile
+      getProfileData(token);
+    }
+
   }).catch(err => console.error('Error fetching token', err));
 }
 
-function getProfileData(tokenData){
+function ogetProfileData(tokenData){
   console.log(tokenData);
 
   const dataurl = `https://social.yahooapis.com/v1/user/${tokenData.xoauth_yahoo_guid}/profile?format=json`;
