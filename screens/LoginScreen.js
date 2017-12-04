@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   AppRegistry,
   AsyncStorage,
@@ -11,6 +12,8 @@ import {
   Text,
   TouchableOpacity,
   View,
+  WebView,
+  LinkingIOS,
 } from 'react-native';
 import config from './../config.js';
 import { WebBrowser } from 'expo';
@@ -26,82 +29,118 @@ const REFRESH_TOKEN = 'REFRESH_TOKEN';
 export default class LoginScreen extends React.Component {
     static navigationOptions = {
         title:'Login',
-      };
+    };
 
-    _handleOpenURL(event) {
-      console.log(event.url);
+    constructor(props){
+      super(props);
+      let client_id = config.client_id;
+      let state =  Math.random() + '';
+
+      let moauthurl = 'https://api.login.yahoo.com/oauth2/request_auth?'+
+        qs.stringify({
+          client_id,
+          response_type: 'code',
+          language: 'en-us',
+          redirect_uri: 'oob',
+          state,
+      });
+
+      console.log(moauthurl);
+
+
+      this.state = {
+        url:moauthurl,
+        pstate:state
+      }
+
+      this._handleOAuth = this._handleOAuth.bind(this);
+      this._onNavigationStateChange = this._onNavigationStateChange.bind(this);
+      this._onMessage = this._onMessage.bind(this);
+    }
+
+
+
+    _onNavigationStateChange(event){
+      console.log(event);
+      
+      if(event.title == 'Example Domain')
+      {
+        
+        const [, query_string] = event.url.match(/\?(.*)/);
+        console.log(query_string);
+    
+        const query = qs.parse(query_string);
+        console.log(`query: ${JSON.stringify(query)}`);
+    
+        if (query.state === this.state.pstate) {
+          getToken(query.code, 'access_token', getProfileData);
+        } else {
+          console.error('Error authorizing oauth redirection');
+        }
+      }
+
+      if(event.url == 'https://api.login.yahoo.com/oauth2/authorize'
+       && event.canGoBack)
+      {
+        this.refs.myWebView.postMessage('webview');
+        
+      }
     }
 
     componentDidMount() {
-      Linking.getInitialURL().then((ev) => {
-        if (ev) {
-          this._handleOpenURL(ev);
-        }
-      }).catch(err => {
-          console.warn('An error occurred', err);
-      });
-      Linking.addEventListener('url', this._handleOpenURL);
+     
       
-      console.log('cpdm');
-      OAuth(config.client_id,getToken);
-
     }
-    
 
+    _handleOAuth(client_id, cb) {
+      // Get code
+      // for secure authorization
+        const state = Math.random() + '';
+      
+        const oauthurl = 'https://api.login.yahoo.com/oauth2/request_auth?'+
+                  qs.stringify({
+                    client_id,
+                    response_type: 'code',
+                    language: 'en-us',
+                    redirect_uri: 'http://example.com',
+                    state,
+                  });
+    } 
+
+    _onMessage(e)
+    {
+       if(e.nativeEvent.data)
+       {
+        console.log(e.nativeEvent.data);
+        getToken(e.nativeEvent.data, 'access_token');
+       }
+    }
+      
     render(){
+        let jsCode = `
+        document.addEventListener('message', function(e) {
+          window.postMessage(document.getElementsByClassName('oauth2-code')[0].innerHTML);
+        });
+        `
+
         return (
             <View style={styles.container}>
-                <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-                    <View style={styles.contentContainer}>
-                        <Text style={styles.developmentModeText}>
-                            This is the Login Screen
-                        </Text>
-                    </View>
-                </ScrollView>
+                  <WebView source={{uri: this.state.url}}
+                    ref="myWebView"
+                    javaScriptEnabled={true}
+                    injectedJavaScript={jsCode}
+                    onMessage={this._onMessage}
+                    onNavigationStateChange={this._onNavigationStateChange}
+                  />
             </View>
             )
     }
 }
 
 
-function OAuth(client_id, cb) {
-  // Get code
-    // for secure authorization
-  const state = Math.random() + '';
-  const oauthurl = 'https://api.login.yahoo.com/oauth2/request_auth?'+
-            qs.stringify({
-              client_id,
-              response_type: 'code',
-              language: 'en-us',
-              redirect_uri: 'http://example.com',
-              state,
-            });
-  console.log(oauthurl);
 
-  Linking.openURL(oauthurl).catch(err => console.error('Error processing linking', err));
-  
-  // Listen to redirection
-  Linking.addEventListener('url', handleUrl.bind(this));
-  
-  function handleUrl(event){
-    // Get access_token
-    console.log(event.url);
-    Linking.removeEventListener('url', handleUrl);
-    const [, query_string] = event.url.match(/\?(.*)/);
-    console.log(query_string);
-
-    const query = qs.parse(query_string);
-    console.log(`query: ${JSON.stringify(query)}`);
-
-    if (query.state === state) {
-      cb(query.code, 'access_token', getProfileData);
-    } else {
-      console.error('Error authorizing oauth redirection');
-    }
-  }
-}
-
-function getToken(codeOrToken, tokenType, cb){
+// function getToken(codeOrToken, tokenType, cb){
+function getToken(codeOrToken, tokenType){
   let bodyJson;
   switch(tokenType){
     case 'access_token':
@@ -111,7 +150,7 @@ function getToken(codeOrToken, tokenType, cb){
         client_secret: config.client_secret,
         redirect_uri: 'oob',
         code: codeOrToken,
-        grant_type: 'authorization_code',
+        grant_type: 'authorization_code'
       };
       break;
     case 'refresh_token':
@@ -121,7 +160,7 @@ function getToken(codeOrToken, tokenType, cb){
         client_secret: config.client_secret,
         redirect_uri: 'oob',
         refresh_token: codeOrToken,
-        grant_type: 'refresh_token',
+        grant_type: 'refresh_token'
       };
       break;
     default:
@@ -130,26 +169,29 @@ function getToken(codeOrToken, tokenType, cb){
 
   const tokenurl = 'https://api.login.yahoo.com/oauth2/get_token';
   const authcode = base64.encode(`${config.client_id}:${config.client_secret}`);
+  
   fetch(tokenurl, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
       'Authorization': `Basic ${authcode}`,
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded'
     },
-    body: JSON.stringify(bodyJson)
+    body: build_query(bodyJson,5)
   }).then(res => {
     return res.json();
   }).then(token => {
     console.log(`token res: ${JSON.stringify(token)}`);
-
-    // fetch profile
-    cb(token);
   }).catch(err => console.error('Error fetching token', err));
 }
 
 function getProfileData(tokenData){
-  const dataurl = 'https://social.yahooapis.com/v1/user/${tokenData.xoauth_yahoo_guid}/profile?format=json';
+  console.log(tokenData);
+
+  const dataurl = `https://social.yahooapis.com/v1/user/${tokenData.xoauth_yahoo_guid}/profile?format=json`;
+
+  console.log(dataurl);
+
   fetch(dataurl, {
     method: 'GET',
     headers: {
@@ -161,6 +203,35 @@ function getProfileData(tokenData){
     console.log(`User profile: ${JSON.stringify(profile)}`);
   }).catch(err => console.error('Error fetching profile data', err));
 }
+
+function build_query(obj, num_prefix, temp_key) {
+  
+    var output_string = []
+  
+    Object.keys(obj).forEach(function (val) {
+  
+      var key = val;
+  
+      num_prefix && !isNaN(key) ? key = num_prefix + key : ''
+  
+      var key = encodeURIComponent(key.replace(/[!'()*]/g, escape));
+      temp_key ? key = temp_key + '[' + key + ']' : ''
+  
+      if (typeof obj[val] === 'object') {
+        var query = build_query(obj[val], null, key)
+        output_string.push(query)
+      }
+  
+      else {
+        var value = encodeURIComponent(obj[val].replace(/[!'()*]/g, escape));
+        output_string.push(key + '=' + value)
+      }
+  
+    })
+  
+    return output_string.join('&')
+  
+  }
 
 const styles = StyleSheet.create({
     container: {
