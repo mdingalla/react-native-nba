@@ -34,7 +34,7 @@ export default class HomeScreen extends React.Component {
           refresh_token: '',
           auth_state: '',
           profile: {
-            imageUrl: '',
+            imageUrl: 'assets/images/robot-dev.png',
             nickname: '',
           },
         };
@@ -115,7 +115,7 @@ export default class HomeScreen extends React.Component {
             refresh_token: '',
             auth_state: '',
             profile: {
-              imageUrl: '',
+              imageUrl: 'assets/images/robot-dev.png',
               nickname: '',
             },
           });
@@ -161,7 +161,7 @@ export default class HomeScreen extends React.Component {
         refresh_token: '',
         auth_state: '',
         profile: {
-          imageUrl: '',
+          imageUrl: 'assets/images/robot-dev.png',
           nickname: '',
         },
       });
@@ -172,7 +172,6 @@ export default class HomeScreen extends React.Component {
   render() {
     let notLogged = null;
     let imageProfile = null;
-    let imageProfileLink = require('../assets/images/robot-dev.png');
     if(!this.state.refresh_token)
     {
       notLogged = <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -214,20 +213,18 @@ export default class HomeScreen extends React.Component {
     }
     else 
     {
-      if(this.state.profile)
-      {
-        imageProfileLink = {uri:this.state.profile.imageUrl};
-        imageProfile = <Image source={imageProfileLink} />
-      }
-      notLogged =<ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        
+       notLogged =<ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
           <View style={styles.getStartedContainer}>
             <Text>{this.state.profile.nickname}</Text>
           </View>
-        {imageProfile}
+          <Image style={styles.profileImage}
+          source={{uri:this.state.profile.imageUrl}}/>
           <View style={styles.helpContainer}>
           <Button  title="Logout" onPress={this.logout} color="#841584"/>
         </View>
         </ScrollView>
+      
     }
     return (
       <View style={styles.container}>
@@ -362,6 +359,13 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     marginTop: 3,
     marginLeft: -10,
+  },
+  profileImage: {
+    width: 100,
+    height: 80,
+    resizeMode: 'contain',
+    marginTop: 3,
+    marginLeft: 5,
   },
   getStartedContainer: {
     alignItems: 'center',

@@ -6,8 +6,11 @@ import { TabNavigator, TabBarBottom } from 'react-navigation';
 import Colors from '../constants/Colors';
 
 import HomeScreen from '../screens/HomeScreen';
+import {AuthHomeScreen} from '../screens/AuthHomeScreen';
 import LinksScreen from '../screens/LinksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import {AuthFantasyScreen} from '../screens/AuthFantasyScreen';
+import FantasyScreen from '../screens/FantasyScreen';
 
 
 
@@ -22,6 +25,11 @@ export default TabNavigator(
     Settings: {
       screen: SettingsScreen,
     },
+     Fantasy:{
+      screen:AuthFantasyScreen,
+    },
+
+    
   },
   {
     navigationOptions: ({ navigation }) => ({
@@ -38,6 +46,11 @@ export default TabNavigator(
           case 'Links':
             iconName = Platform.OS === 'ios' ? `ios-link${focused ? '' : '-outline'}` : 'md-link';
             break;
+
+          case 'Fantasy':
+            iconName = Platform.OS === 'ios' ? `ios-link${focused ? '' : '-outline'}` : 'md-link';
+            break;
+            
           case 'Settings':
             iconName =
               Platform.OS === 'ios' ? `ios-options${focused ? '' : '-outline'}` : 'md-options';
