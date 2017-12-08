@@ -18,7 +18,8 @@ import { MonoText } from '../components/StyledText';
 import qs from 'qs';
 import base64 from 'base-64';
 
-const REFRESH_TOKEN = '@NBEY:REFRESH_TOKEN';
+// const REFRESH_TOKEN = '@NBEY:REFRESH_TOKEN';
+const REFRESH_TOKEN = 'REFRESH_TOKEN';
 
 export default class HomeScreen extends React.Component {
   static navigationOptions = {
@@ -38,66 +39,33 @@ export default class HomeScreen extends React.Component {
           },
         };
 
-    this.OAuth = this.OAuth.bind(this);
-    this.getProfileData = this.getProfileData.bind(this);
+    // this.OAuth = this.OAuth.bind(this);
+    // this.getProfileData = this.getProfileData.bind(this);
     this.getToken = this.getToken.bind(this);
     this.logout = this.logout.bind(this);
+    this._getProfileData = this._getProfileData.bind(this);
 
   }
 
   componentDidMount() {
-   
-
-  }
-
-  async OAuth() {
-    const refresh_token = await AsyncStorage.getItem(REFRESH_TOKEN);
-    console.log(`refresh_token in OAuth: ${refresh_token}`);
-    if (refresh_token === null) {
-      console.log('No refresh_token stored yet');
-      // Get code
-        // for secure authorization
-      let state = Math.random() + '';
-      this.setState({
-        auth_state: state,
-      });
-
-      const oauthurl = 'https://api.login.yahoo.com/oauth2/request_auth?'+
-                qs.stringify({
-                  client_id: config.client_id,
-                  response_type: 'code',
-                  language: 'en-us',
-                  redirect_uri: 'oob',
-                  state,
-                });
-      console.log(oauthurl);
-
-      Linking.openURL(oauthurl).catch(err => console.error('Error processing linking', err));
-
-      // Listen to redirection
-      function handleUrl(event){
-        // Get access_token
-        console.log(event.url);
-        Linking.removeEventListener('url', handleUrl);
-        const [, query_string] = event.url.match(/\?(.*)/);
-        console.log(query_string);
-
-        const query = qs.parse(query_string);
-        console.log(`query: ${JSON.stringify(query)}`);
-
-        if (query.state === this.state.auth_state) {
-          this.getToken(query.code, 'access_token');
-        } else {
-          console.error('Error authorizing oauth redirection');
-        }
+    AsyncStorage.getItem(REFRESH_TOKEN).then((value)=>{
+      console.log(value);
+      if(value)
+      {
+        this.setState({
+          refresh_token:value
+        });
+        this.getToken(value, 'refresh_token');
       }
-      Linking.addEventListener('url', handleUrl.bind(this));
-    } else {
-      console.log('Found refresh_token');
-      // Get access_token
-      this.getToken(refresh_token, 'refresh_token');
-    }
+      
+    }).catch((err)=>{
+      console.log(err);
+      this.props.navigation.navigate('Login');
+    })
+
   }
+
+  
 
   getToken(codeOrToken, tokenType){
     let bodyJson;
@@ -133,9 +101,9 @@ export default class HomeScreen extends React.Component {
       headers: {
         'Accept': 'application/json',
         'Authorization': `Basic ${authcode}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: JSON.stringify(bodyJson)
+      body: build_query(bodyJson,5)
     }).then(res => {
       return res.json();
     }).then(token => {
@@ -202,46 +170,68 @@ export default class HomeScreen extends React.Component {
   
 
   render() {
-    
+    let notLogged = null;
+    let imageProfile = null;
+    let imageProfileLink = require('../assets/images/robot-dev.png');
+    if(!this.state.refresh_token)
+    {
+      notLogged = <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <View style={styles.welcomeContainer}>
+          <Image
+            source={
+              __DEV__
+                ? require('../assets/images/robot-dev.png')
+                : require('../assets/images/robot-prod.png')
+            }
+            style={styles.welcomeImage}
+          />
+        </View>
+
+        <View style={styles.getStartedContainer}>
+          {this._maybeRenderDevelopmentModeWarning()}
+
+          <Text style={styles.getStartedText}>Get started by opening</Text>
+
+          <View style={[styles.codeHighlightContainer, styles.homeScreenFilename]}>
+            <MonoText style={styles.codeHighlightText}>screens/HomeScreen.js</MonoText>
+          </View>
+
+          <Text style={styles.getStartedText}>
+            Change this text and your app will automatically reload.
+          </Text>
+        </View>
+
+        <View style={styles.helpContainer}>
+          <TouchableOpacity onPress={this._handleHelpPress} style={styles.helpLink}>
+            <Text style={styles.helpLinkText}>Help, it didn’t automatically reload!</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.helpContainer}>
+          <Button  title="Login" onPress={this._handleLoginPress} color="#841584"/>
+        </View>
+      </ScrollView>
+    }
+    else 
+    {
+      if(this.state.profile)
+      {
+        imageProfileLink = {uri:this.state.profile.imageUrl};
+        imageProfile = <Image source={imageProfileLink} />
+      }
+      notLogged =<ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+          <View style={styles.getStartedContainer}>
+            <Text>{this.state.profile.nickname}</Text>
+          </View>
+        {imageProfile}
+          <View style={styles.helpContainer}>
+          <Button  title="Logout" onPress={this.logout} color="#841584"/>
+        </View>
+        </ScrollView>
+    }
     return (
       <View style={styles.container}>
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-          <View style={styles.welcomeContainer}>
-            <Image
-              source={
-                __DEV__
-                  ? require('../assets/images/robot-dev.png')
-                  : require('../assets/images/robot-prod.png')
-              }
-              style={styles.welcomeImage}
-            />
-          </View>
-
-          <View style={styles.getStartedContainer}>
-            {this._maybeRenderDevelopmentModeWarning()}
-
-            <Text style={styles.getStartedText}>Get started by opening</Text>
-
-            <View style={[styles.codeHighlightContainer, styles.homeScreenFilename]}>
-              <MonoText style={styles.codeHighlightText}>screens/HomeScreen.js</MonoText>
-            </View>
-
-            <Text style={styles.getStartedText}>
-              Change this text and your app will automatically reload.
-            </Text>
-          </View>
-
-          <View style={styles.helpContainer}>
-            <TouchableOpacity onPress={this._handleHelpPress} style={styles.helpLink}>
-              <Text style={styles.helpLinkText}>Help, it didn’t automatically reload!</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.helpContainer}>
-            <Button  title="Login" onPress={this._handleLoginPress} color="#841584"/>
-            {/* <Button  title="Login Oauth" onPress={this.OAuth} color="#841584"/> */}
-          </View>
-        </ScrollView>
+        {notLogged}
 
         <View style={styles.tabBarInfoContainer}>
           <Text style={styles.tabBarInfoText}>This is a tab bar. You can edit it in:</Text>
@@ -290,7 +280,61 @@ export default class HomeScreen extends React.Component {
   _handleLoginPress = () => {
     this.props.navigation.navigate('Login');
   }
+
+  _getProfileData(tokenData){
+    const dataurl = `https://social.yahooapis.com/v1/user/${tokenData}/profile?format=json`;
+    fetch(dataurl, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${tokenData.access_token}`
+      }
+    }).then(res => {
+      return res.json();
+    }).then(profileData => {
+      console.log(`User profile: ${JSON.stringify(profileData)}`);
+
+      this.setState({
+        profile: {
+          imageUrl: profileData.profile.image.imageUrl,
+          nickname: profileData.profile.nickname,
+        }
+      },()=>{
+        this.props.navigation.navigate('Home');
+      });
+    }).catch(err => console.error('Error fetching profile data', err));
+  }
 }
+
+
+function build_query(obj, num_prefix, temp_key) {
+  
+    var output_string = []
+  
+    Object.keys(obj).forEach(function (val) {
+  
+      var key = val;
+  
+      num_prefix && !isNaN(key) ? key = num_prefix + key : ''
+  
+      var key = encodeURIComponent(key.replace(/[!'()*]/g, escape));
+      temp_key ? key = temp_key + '[' + key + ']' : ''
+  
+      if (typeof obj[val] === 'object') {
+        var query = build_query(obj[val], null, key)
+        output_string.push(query)
+      }
+  
+      else {
+        var value = encodeURIComponent(obj[val].replace(/[!'()*]/g, escape));
+        output_string.push(key + '=' + value)
+      }
+  
+    })
+  
+    return output_string.join('&')
+  
+  }
 
 const styles = StyleSheet.create({
   container: {
