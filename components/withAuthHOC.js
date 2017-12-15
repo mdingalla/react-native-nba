@@ -99,6 +99,7 @@ export default function withAuthHOC(WrappedComponent) {
       
           const tokenurl = `https://api.login.yahoo.com/oauth2/get_token`;
           const authcode = base64.encode(`${config.client_id}:${config.client_secret}`);
+          console.log('authcode ' + authcode);
           fetch(tokenurl, {
             method: 'POST',
             headers: {

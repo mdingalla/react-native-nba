@@ -17,6 +17,7 @@ import { WebBrowser } from 'expo';
 import { MonoText } from '../components/StyledText';
 import qs from 'qs';
 import base64 from 'base-64';
+// import MyFantasy from '../api/fantasyAPi';
 
 
 
@@ -25,10 +26,15 @@ export default class FantasyScreen extends React.Component {
       title: 'Fantasy',
     };
 
+    componentDidMount()
+    {
+        console.log('cpdm MyFantasy');
+    }
+
     render() {
         return (
             <View>
-                <Text>Fantasy</Text>
+                <Text></Text>
             </View>
         );
     }
