@@ -23,6 +23,7 @@ import base64 from 'base-64';
 import { MonoText } from '../components/StyledText';
 
 const REFRESH_TOKEN = 'REFRESH_TOKEN';
+const ACCESS_TOKEN = 'ACCESS_TOKEN';
 
 
 
@@ -152,6 +153,10 @@ export default class LoginScreen extends React.Component {
           });
         }
         else if (token.refresh_token) {
+
+          if(token.access_token){
+            AsyncStorage.setItem(ACCESS_TOKEN,token.access_token);
+          }
           // store refresh_token
           AsyncStorage.setItem(REFRESH_TOKEN, token.refresh_token);
     

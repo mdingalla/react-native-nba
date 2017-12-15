@@ -49,7 +49,7 @@ export default class HomeScreen extends React.Component {
 
   componentDidMount() {
     AsyncStorage.getItem(REFRESH_TOKEN).then((value)=>{
-      console.log(value);
+      // console.log(value);
       if(value)
       {
         this.setState({
@@ -71,7 +71,7 @@ export default class HomeScreen extends React.Component {
     let bodyJson;
     switch(tokenType){
       case 'access_token':
-        console.log(`code: ${codeOrToken}`);
+        // console.log(`code: ${codeOrToken}`);
         bodyJson = {
           client_id: config.client_id,
           client_secret: config.client_secret,
@@ -81,7 +81,7 @@ export default class HomeScreen extends React.Component {
         };
         break;
       case 'refresh_token':
-        console.log(`refresh_token: ${codeOrToken}`);
+        // console.log(`refresh_token: ${codeOrToken}`);
         bodyJson = {
           client_id: config.client_id,
           client_secret: config.client_secret,
@@ -107,7 +107,7 @@ export default class HomeScreen extends React.Component {
     }).then(res => {
       return res.json();
     }).then(token => {
-      console.log(`token res: ${JSON.stringify(token)}`);
+      // console.log(`token res: ${JSON.stringify(token)}`);
 
       if (token.error) {
         AsyncStorage.removeItem(REFRESH_TOKEN, () => {
@@ -145,7 +145,7 @@ export default class HomeScreen extends React.Component {
     }).then(res => {
       return res.json();
     }).then(profileData => {
-      console.log(`User profile: ${JSON.stringify(profileData)}`);
+      // console.log(`User profile: ${JSON.stringify(profileData)}`);
 
       this.setState({
         profile: {
@@ -289,7 +289,7 @@ export default class HomeScreen extends React.Component {
     }).then(res => {
       return res.json();
     }).then(profileData => {
-      console.log(`User profile: ${JSON.stringify(profileData)}`);
+      // console.log(`User profile: ${JSON.stringify(profileData)}`);
 
       this.setState({
         profile: {

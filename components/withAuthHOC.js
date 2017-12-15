@@ -20,7 +20,7 @@ import {
   
   // const REFRESH_TOKEN = '@NBEY:REFRESH_TOKEN';
   const REFRESH_TOKEN = 'REFRESH_TOKEN';
-
+  const ACCESS_TOKEN = 'ACCESS_TOKEN';
 
 export default function withAuthHOC(WrappedComponent) {
 
@@ -50,14 +50,14 @@ export default function withAuthHOC(WrappedComponent) {
       
         componentDidMount() {
           console.log('withAuthHOC cpdm');
-          AsyncStorage.getItem(REFRESH_TOKEN).then((value)=>{
-            console.log(value);
+          AsyncStorage.getItem(ACCESS_TOKEN).then((value)=>{
+            // console.log(value);
             if(value)
             {
               this.setState({
                 refresh_token:value
               });
-              this.getToken(value, 'refresh_token');
+              this.getToken(value, 'access_token');
             }
             
           }).catch((err)=>{
@@ -70,11 +70,11 @@ export default function withAuthHOC(WrappedComponent) {
         
       
         getToken(codeOrToken, tokenType){
-          console.log('withAuthHOC getToken');
+          // console.log('withAuthHOC getToken');
           let bodyJson;
           switch(tokenType){
             case 'access_token':
-              console.log(`code: ${codeOrToken}`);
+              // console.log(`code: ${codeOrToken}`);
               bodyJson = {
                 client_id: config.client_id,
                 client_secret: config.client_secret,
@@ -84,7 +84,7 @@ export default function withAuthHOC(WrappedComponent) {
               };
               break;
             case 'refresh_token':
-              console.log(`refresh_token: ${codeOrToken}`);
+              // console.log(`refresh_token: ${codeOrToken}`);
               bodyJson = {
                 client_id: config.client_id,
                 client_secret: config.client_secret,
@@ -99,7 +99,7 @@ export default function withAuthHOC(WrappedComponent) {
       
           const tokenurl = `https://api.login.yahoo.com/oauth2/get_token`;
           const authcode = base64.encode(`${config.client_id}:${config.client_secret}`);
-          console.log('authcode ' + authcode);
+          // console.log('authcode ' + authcode);
           fetch(tokenurl, {
             method: 'POST',
             headers: {
@@ -111,7 +111,10 @@ export default function withAuthHOC(WrappedComponent) {
           }).then(res => {
             return res.json();
           }).then(token => {
-            console.log(`token res: ${JSON.stringify(token)}`);
+            // console.log(`token res: ${JSON.stringify(token)}`);
+            if(token.access_token){
+              AsyncStorage.setItem(ACCESS_TOKEN,token.access_token);
+            }
       
             if (token.error) {
               AsyncStorage.removeItem(REFRESH_TOKEN, () => {
@@ -127,7 +130,9 @@ export default function withAuthHOC(WrappedComponent) {
             }
             else if (token.refresh_token) {
               // store refresh_token
+              
               AsyncStorage.setItem(REFRESH_TOKEN, token.refresh_token);
+              
       
               this.setState({
                 refresh_token: token.refresh_token,
@@ -149,7 +154,7 @@ export default function withAuthHOC(WrappedComponent) {
           }).then(res => {
             return res.json();
           }).then(profileData => {
-            console.log(`User profile: ${JSON.stringify(profileData)}`);
+            // console.log(`User profile: ${JSON.stringify(profileData)}`);
       
             this.setState({
               profile: {
