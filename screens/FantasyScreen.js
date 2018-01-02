@@ -40,10 +40,11 @@ export default class FantasyScreen extends React.Component {
     {
         console.log('cpdm MyFantasy');
         Fantasy.getGames().then(data=>{
-             console.log(mappedGames(data.fantasy_content.users[0].user[1].games));
+            let activegames = _.filter(mappedGames(data.fantasy_content.users[0].user[1].games),{is_game_over:0});
+             console.log(activegames);
             //  console.log(data.fantasy_content.users[0].user[1].games);
             this.setState({
-                games:mappedGames(data.fantasy_content.users[0].user[1].games)
+                games:activegames
             });
         });
     }
